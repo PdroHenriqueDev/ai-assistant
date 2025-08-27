@@ -205,5 +205,4 @@ class BrokerSystem:
             return "knowledge", decision_details
     
     async def get_conversation_history(self, session_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Get conversation history for a session"""
         return await redis_client.get_conversation_history(session_id, limit)
