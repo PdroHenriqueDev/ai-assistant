@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Main application
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongo:27017/knowledge_math_assistant}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - CHROMA_PERSIST_DIRECTORY=/app/data/chroma
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - KNOWLEDGE_BASE_URL=${KNOWLEDGE_BASE_URL:-https://ajuda.infinitepay.io/pt-BR/}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
+    volumes:
+      - chroma_data:/app/data/chroma
+      - app_logs:/app/logs
+    depends_on:
+      - mongo
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis for conversation history and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # MongoDB for storing chat history and metadata
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=knowledge_math_assistant
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development frontend (optional, for development only)
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    profiles:
+      - dev
+    depends_on:
+      - app
+
+volumes:
+  mongo_data:
+    driver: local
+  chroma_data:
+    driver: local
+  app_logs:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: knowledge-math-network
