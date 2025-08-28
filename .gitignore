@@ -305,3 +305,6 @@ dist/
 # Local configuration
 config.local.*
 settings.local.*
+
+# Kubernetes secrets (contains sensitive data templates)
+k8s/secrets.yaml

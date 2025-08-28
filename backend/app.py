@@ -12,9 +12,9 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any
 
 
-from brokers.broker_system import BrokerSystem
-from database.mongodb import get_database, save_message, get_messages
-from database.redis_client import redis_client
+from backend.brokers.broker_system import BrokerSystem
+from backend.database.mongodb import get_database, save_message, get_messages
+from backend.database.redis_client import redis_client
 
 load_dotenv()
 

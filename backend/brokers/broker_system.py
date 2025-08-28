@@ -5,9 +5,9 @@ import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 
-from agents.knowledge_agent import KnowledgeAgent
-from agents.math_agent import MathAgent
-from database.redis_client import redis_client
+from backend.agents.knowledge_agent import KnowledgeAgent
+from backend.agents.math_agent import MathAgent
+from backend.database.redis_client import redis_client
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: knowledge-math-assistant
+data:
+  MONGODB_URL: "mongodb://mongo:27017/knowledge_math_assistant"
+  REDIS_URL: "redis://redis:6379"
+  CHROMA_PERSIST_DIRECTORY: "/app/data/chroma"
+  LOG_LEVEL: "INFO"
+  KNOWLEDGE_BASE_URL: "https://ajuda.infinitepay.io/pt-BR/"
+  CORS_ORIGINS: "http://localhost:3000,http://localhost:8000"
+  PORT: "8000"
+  HOST: "0.0.0.0"
