@@ -7,10 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
 
+# Add the rag_pipeline directory to Python path
 rag_pipeline_path = Path(__file__).parent.parent / "rag_pipeline"
-sys.path.append(str(rag_pipeline_path))
+sys.path.insert(0, str(rag_pipeline_path))
 
-from main_pipeline import InfinitePayRAGPipeline
+try:
+    from main_pipeline import InfinitePayRAGPipeline
+except ImportError:
+    # Fallback import path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from rag_pipeline.main_pipeline import InfinitePayRAGPipeline
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

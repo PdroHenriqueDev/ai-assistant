@@ -36,6 +36,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend source
 COPY backend/ ./backend/
 
+# Copy RAG pipeline
+COPY rag_pipeline/ ./rag_pipeline/
+
 # Copy built frontend from previous stage
 COPY --from=frontend-build /app/frontend/build ./frontend/build
 
