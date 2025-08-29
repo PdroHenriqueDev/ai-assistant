@@ -906,7 +906,7 @@ curl "http://localhost:8001/api/messages?session_id=session_c&limit=10"
 
 **Test multiple WebSocket connections:**
 
-```javascript
+```typescript
 // Client 1
 const socket1 = io('http://localhost:8001');
 socket1.emit('chat_message', {
@@ -1046,7 +1046,3 @@ docker-compose logs | grep "session_id"
 - Errors in one session don't affect others
 - Failed sessions can be retried independently
 - System remains stable under concurrent load
-
-## License
-
-This project is licensed under the MIT License.
