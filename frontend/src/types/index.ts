@@ -1,4 +1,3 @@
-// Main application types
 export interface Message {
   text: string;
   type: 'text' | 'knowledge' | 'math' | 'error';
@@ -18,7 +17,7 @@ export interface ChatError {
   text?: string;
 }
 
-export type ActiveTab = 'chat' | 'rag';
+
 
 export interface SocketData {
   message: string;
@@ -30,12 +29,10 @@ export interface SocketData {
   executionTime?: number;
 }
 
-// Chat message component types
 export interface ChatMessageProps {
   message: Message;
 }
 
-// RAG Interface types
 export interface RAGMessage {
   type: 'user' | 'bot' | 'system' | 'error';
   content: string;
@@ -64,5 +61,4 @@ export interface EvaluationResponse {
   avg_sources: number;
 }
 
-// Web Vitals types
 export type ReportHandler = (metric: any) => void;

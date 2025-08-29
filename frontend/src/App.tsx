@@ -3,8 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
 import './App.css';
 import ChatMessage from './components/ChatMessage';
-import RAGInterface from './components/RAGInterface';
-import { Message, ChatError, ActiveTab } from './types';
+import { Message, ChatError } from './types';
 
 function App(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -12,12 +11,13 @@ function App(): JSX.Element {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('chat');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize socket connection
+
   useEffect(() => {
-    const newSocket = io('http://localhost:8000', {
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    const newSocket = io(apiUrl, {
       transports: ['polling'],
       reconnection: true,
     });
@@ -53,7 +53,7 @@ function App(): JSX.Element {
 
     setSocket(newSocket);
 
-    // Load chat history
+
     loadChatHistory();
 
     return () => {
@@ -61,7 +61,7 @@ function App(): JSX.Element {
     };
   }, []);
 
-  // Scroll to bottom when messages change
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -72,7 +72,12 @@ function App(): JSX.Element {
 
   const loadChatHistory = async (): Promise<void> => {
     try {
-      const response = await axios.get<{ messages: Message[] }>('/api/messages');
+      const response = await axios.get<{ messages: Message[] }>('/api/messages', {
+        params: {
+          session_id: 'default',
+          limit: 50
+        }
+      });
       setMessages(response.data.messages || []);
     } catch (error) {
       console.error('Failed to load chat history:', error);
@@ -101,36 +106,20 @@ function App(): JSX.Element {
     setInputMessage(e.target.value);
   };
 
-  const handleTabChange = (tab: ActiveTab): void => {
-    setActiveTab(tab);
-  };
+
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>AI Assistant Platform</h1>
-        <div className="tab-navigation">
-          <button 
-            className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
-            onClick={() => handleTabChange('chat')}
-          >
-            💬 Multi-Agent Chat
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'rag' ? 'active' : ''}`}
-            onClick={() => handleTabChange('rag')}
-          >
-            🤖 InfinitePay RAG
-          </button>
-        </div>
+
         <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
           {isConnected ? 'Connected' : 'Disconnected'}
         </div>
       </header>
 
       <main className="app-main">
-        {activeTab === 'chat' ? (
-          <div className="chat-container">
+        <div className="chat-container">
             <div className="messages-container">
               {messages.length === 0 ? (
                 <div className="welcome-message">
@@ -170,10 +159,7 @@ function App(): JSX.Element {
                 Send
               </button>
             </form>
-          </div>
-        ) : (
-          <RAGInterface />
-        )}
+        </div>
 
         <div className="info-panel">
           <h2>Query Information</h2>

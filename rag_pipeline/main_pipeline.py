@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-Main Pipeline for InfinitePay RAG System
-
-This script orchestrates the complete RAG pipeline: scraping, document processing,
-vector store creation, and question answering.
-"""
 
 import os
 import sys
@@ -14,13 +8,13 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 
-# Import our modules
+
 from scraper import InfinitePayScraper
 from document_processor import DocumentProcessor
 from vector_store import VectorStoreManager
 from rag_chain import InfinitePayRAGChain, RAGEvaluator
 
-# Configure logging
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -28,7 +22,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class InfinitePayRAGPipeline:
-    """Complete RAG pipeline for InfinitePay help center"""
     
     def __init__(self, 
                  openai_api_key: str,
@@ -36,23 +29,14 @@ class InfinitePayRAGPipeline:
                  articles_file: str = "infinitepay_articles.json",
                  vector_store_dir: str = "./infinitepay_vector_store",
                  store_type: str = "faiss"):
-        """
-        Initialize the RAG pipeline
-        
-        Args:
-            openai_api_key: OpenAI API key
-            base_url: Base URL for scraping
-            articles_file: File to save/load scraped articles
-            vector_store_dir: Directory for vector store persistence
-            store_type: Type of vector store ('faiss' or 'chroma')
-        """
+
         self.openai_api_key = openai_api_key
         self.base_url = base_url
         self.articles_file = articles_file
         self.vector_store_dir = vector_store_dir
         self.store_type = store_type
         
-        # Initialize components
+
         self.scraper = InfinitePayScraper(base_url=base_url)
         self.processor = DocumentProcessor()
         self.vector_manager = VectorStoreManager(
@@ -76,12 +60,12 @@ class InfinitePayRAGPipeline:
                 logger.info(f"Loaded {len(articles)} existing articles")
                 return articles
         
-        # Scrape new articles
+
         logger.info("Starting article scraping...")
         articles = self.scraper.scrape_all_articles(max_articles=max_articles)
         
         if articles:
-            # Save articles
+
             self.scraper.save_articles(self.articles_file)
             logger.info(f"Scraped and saved {len(articles)} articles")
         else:
@@ -90,11 +74,10 @@ class InfinitePayRAGPipeline:
         return articles
     
     def process_documents(self, articles: List[Any]) -> List[Any]:
-        """Process articles into LangChain documents"""
         logger.info("Processing articles into documents...")
         documents = self.processor.process_articles(articles)
         
-        # Print processing statistics
+
         stats = self.processor.get_processing_stats(documents)
         logger.info("Document processing completed:")
         for key, value in stats.items():
@@ -103,10 +86,9 @@ class InfinitePayRAGPipeline:
         return documents
     
     def create_vector_store(self, documents: List[Any], force_recreate: bool = False) -> bool:
-        """Create or load vector store"""
         vector_store_path = Path(self.vector_store_dir)
         
-        # Try to load existing vector store
+
         if vector_store_path.exists() and not force_recreate:
             logger.info("Attempting to load existing vector store...")
             if self.vector_manager.load_vector_store():
@@ -115,7 +97,7 @@ class InfinitePayRAGPipeline:
             else:
                 logger.warning("Failed to load existing vector store, creating new one")
         
-        # Create new vector store
+
         if not documents:
             logger.error("No documents available to create vector store")
             return False
@@ -131,7 +113,6 @@ class InfinitePayRAGPipeline:
             return False
     
     def initialize_rag_chain(self) -> bool:
-        """Initialize the RAG chain"""
         try:
             logger.info("Initializing RAG chain...")
             self.rag_chain.setup_qa_chain(self.vector_manager)
@@ -146,27 +127,26 @@ class InfinitePayRAGPipeline:
                       max_articles: Optional[int] = None,
                       force_rescrape: bool = False,
                       force_recreate_vector_store: bool = False) -> bool:
-        """Setup the complete pipeline"""
         logger.info("Setting up InfinitePay RAG pipeline...")
         
-        # Step 1: Scrape articles
+
         articles = self.scrape_articles(max_articles, force_rescrape)
         if not articles:
             logger.error("No articles available")
             return False
         
-        # Step 2: Process documents
+
         documents = self.process_documents(articles)
         if not documents:
             logger.error("No documents created")
             return False
         
-        # Step 3: Create vector store
+
         if not self.create_vector_store(documents, force_recreate_vector_store):
             logger.error("Failed to create vector store")
             return False
         
-        # Step 4: Initialize RAG chain
+
         if not self.initialize_rag_chain():
             logger.error("Failed to initialize RAG chain")
             return False
@@ -175,14 +155,12 @@ class InfinitePayRAGPipeline:
         return True
     
     def ask(self, question: str) -> Dict[str, Any]:
-        """Ask a question using the RAG system"""
         if not self.is_initialized:
             raise ValueError("Pipeline not initialized. Call setup_pipeline() first.")
         
         return self.rag_chain.ask(question)
     
     def interactive_mode(self):
-        """Run interactive question-answering mode"""
         if not self.is_initialized:
             logger.error("Pipeline not initialized. Please run setup first.")
             return
@@ -220,7 +198,6 @@ class InfinitePayRAGPipeline:
                 print(f"\n❌ Erro inesperado: {str(e)}")
     
     def run_evaluation(self) -> Dict[str, Any]:
-        """Run evaluation with test questions"""
         if not self.is_initialized:
             raise ValueError("Pipeline not initialized. Call setup_pipeline() first.")
         
@@ -239,7 +216,6 @@ class InfinitePayRAGPipeline:
         return evaluator.evaluate_questions(test_questions)
     
     def get_pipeline_info(self) -> Dict[str, Any]:
-        """Get information about the pipeline"""
         info = {
             "base_url": self.base_url,
             "articles_file": self.articles_file,
@@ -248,7 +224,7 @@ class InfinitePayRAGPipeline:
             "is_initialized": self.is_initialized
         }
         
-        # Add vector store info if available
+
         try:
             vector_info = self.vector_manager.get_store_info()
             info["vector_store_info"] = vector_info
@@ -259,7 +235,6 @@ class InfinitePayRAGPipeline:
 
 
 def main():
-    """Main function with CLI interface"""
     parser = argparse.ArgumentParser(description="InfinitePay RAG Pipeline")
     parser.add_argument("--setup", action="store_true", help="Setup the pipeline")
     parser.add_argument("--interactive", action="store_true", help="Run interactive mode")
@@ -272,7 +247,7 @@ def main():
     
     args = parser.parse_args()
     
-    # Load environment variables
+
     load_dotenv()
     openai_api_key = os.getenv("OPENAI_API_KEY")
     

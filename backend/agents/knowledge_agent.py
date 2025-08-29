@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 class KnowledgeAgent:
     def __init__(self):
-        # Use Docker service name for internal communication
         self.rag_api_url = os.getenv("RAG_API_URL", "http://rag-api:8001/ask")
     
 

@@ -18,15 +18,12 @@ class BrokerSystem:
         
         try:
             self.agents["math"] = MathAgent()
-            print("DEBUG: Math agent initialized successfully")
         except Exception as e:
-            print(f"DEBUG: Failed to initialize math agent: {e}")
+            pass
             
         try:
             self.agents["knowledge"] = KnowledgeAgent()
-            print("DEBUG: Knowledge agent initialized successfully")
         except Exception as e:
-            print(f"DEBUG: Failed to initialize knowledge agent: {e}")
             self.agents["knowledge"] = None
     
     async def process_message(self, message: Dict[str, Any], session_id: str = "default") -> Dict[str, Any]:
@@ -34,7 +31,6 @@ class BrokerSystem:
         
         try:
             message_text = message.get("text", message.get("message", ""))
-            print(f"DEBUG: Broker processing message: '{message_text}'")
             
             try:
                 await redis_client.store_conversation_message(session_id, {
@@ -43,14 +39,14 @@ class BrokerSystem:
                     "sender": "user"
                 })
             except Exception as e:
-                print(f"Warning: Failed to store user message in Redis: {e}")
+                pass
             
             query_hash = hashlib.md5(message_text.encode()).hexdigest()
             cached_response = None
             try:
                 cached_response = await redis_client.get_cached_response(query_hash)
             except Exception as e:
-                print(f"Warning: Failed to get cached response: {e}")
+                pass
             
             if cached_response:
                 try:
@@ -59,28 +55,23 @@ class BrokerSystem:
                         "session_id": session_id
                     })
                 except Exception as e:
-                    print(f"Warning: Failed to log cache hit: {e}")
+                    pass
                 
                 try:
                     await redis_client.store_conversation_message(session_id, cached_response)
                 except Exception as e:
-                    print(f"Warning: Failed to store cached response: {e}")
+                    pass
                 
                 return cached_response
 
-            print(f"DEBUG: About to determine agent for message: '{message_text}'")
             try:
                 agent_type, decision_details = self._determine_agent(message_text)
-                print(f"DEBUG: Determined agent type: {agent_type}")
-                print(f"DEBUG: Decision details: {decision_details}")
             except Exception as e:
-                print(f"DEBUG: Exception in _determine_agent: {e}")
                 raise
             
             normalized_message = {"text": message_text, "message": message_text}
             
             if agent_type == "math":
-                print(f"DEBUG: Routing to math agent")
                 if "math" in self.agents and self.agents["math"]:
                     response = self.agents["math"].process_query(normalized_message)
                 else:
@@ -91,7 +82,6 @@ class BrokerSystem:
                         "source": "system_error"
                     }
             else:
-                print(f"DEBUG: Routing to knowledge agent")
                 if "knowledge" in self.agents and self.agents["knowledge"]:
                     response = await self.agents["knowledge"].process_query(normalized_message)
                 else:
@@ -102,7 +92,7 @@ class BrokerSystem:
                          "source": "system_error"
                      }
             
-            print(f"DEBUG: Got response from agent: {response.get('type', 'unknown')}")
+
             
             execution_time = (datetime.now() - start_time).total_seconds()
 
@@ -118,7 +108,7 @@ class BrokerSystem:
             try:
                 await redis_client.log_structured_event("message_processed", log_entry)
             except Exception as e:
-                print(f"Warning: Failed to log to Redis streams: {e}")
+                pass
             
             logger.info(f"Router Decision: {json.dumps(log_entry)}")
             
@@ -131,12 +121,12 @@ class BrokerSystem:
             try:
                 await redis_client.cache_agent_response(query_hash, response)
             except Exception as e:
-                print(f"Warning: Failed to cache response: {e}")
+                pass
 
             try:
                 await redis_client.store_conversation_message(session_id, response)
             except Exception as e:
-                print(f"Warning: Failed to store assistant response: {e}")
+                pass
             
             return response
             
@@ -154,7 +144,7 @@ class BrokerSystem:
             try:
                 await redis_client.log_structured_event("processing_error", error_log)
             except Exception as redis_error:
-                print(f"Warning: Failed to log error to Redis: {redis_error}")
+                pass
             
             logger.error(f"Router Error: {json.dumps(error_log)}")
             
@@ -173,14 +163,14 @@ class BrokerSystem:
             try:
                 await redis_client.store_conversation_message(session_id, error_response)
             except Exception as redis_error:
-                print(f"Warning: Failed to store error response: {redis_error}")
+                pass
             
             return error_response
     
     def _determine_agent(self, message: str) -> tuple[str, Dict[str, Any]]:
         math_patterns = [
             r'\d+\s*[+\-*/×÷]\s*\d+', 
-            r'\b(calculate|compute|solve|what is|what\'s|how much|how many)\b.*\d',  # Math keywords with numbers
+            r'\b(calculate|compute|solve|what is|what\'s|how much|how many)\b.*\d',
             r'\b(square root|sqrt|power|exponent)\b',
             r'\b(sin|cos|tan|log|ln)\b',
             r'\d+\s*[%^]',

@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-RAG Chain for InfinitePay RAG Pipeline
-
-This module implements the Retrieval-Augmented Generation chain with Portuguese
-instructions and proper source URL formatting, based purely on RAG content.
-"""
 
 import logging
 from typing import Dict, Any, List, Optional
@@ -14,30 +8,22 @@ from langchain.prompts import PromptTemplate
 from langchain.schema import BaseRetriever
 from vector_store import VectorStoreManager
 
-# Configure logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class InfinitePayRAGChain:
-    """RAG Chain specifically designed for InfinitePay support queries"""
     
     def __init__(self, 
                  openai_api_key: str,
                  model_name: str = "gpt-4o-mini",
                  temperature: float = 0):
-        """
-        Initialize the RAG chain
-        
-        Args:
-            openai_api_key: OpenAI API key
-            model_name: OpenAI model to use
-            temperature: Temperature for response generation
-        """
+
         self.openai_api_key = openai_api_key
         self.model_name = model_name
         self.temperature = temperature
         
-        # Initialize LLM
+
         self.llm = ChatOpenAI(
             openai_api_key=openai_api_key,
             model_name=model_name,
@@ -48,7 +34,6 @@ class InfinitePayRAGChain:
         self.retriever: Optional[BaseRetriever] = None
         
     def create_portuguese_prompt(self) -> PromptTemplate:
-        """Create a Portuguese prompt template for InfinitePay support"""
         template = """
 Você é um assistente de suporte da InfinitePay que responde perguntas com base EXCLUSIVAMENTE nos trechos de documentação fornecidos abaixo.
 
@@ -76,17 +61,16 @@ RESPOSTA:
         )
     
     def setup_qa_chain(self, vector_store_manager: VectorStoreManager) -> None:
-        """Setup the QA chain with the vector store"""
-        # Get retriever from vector store
+
         self.retriever = vector_store_manager.get_retriever(
             search_type="mmr",
             search_kwargs={"k": 5, "fetch_k": 10}
         )
         
-        # Create custom prompt
+
         prompt = self.create_portuguese_prompt()
         
-        # Create QA chain
+
         self.qa_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type="stuff",
@@ -100,11 +84,10 @@ RESPOSTA:
 
     
     def format_response(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """Format the response with proper source URLs"""
         answer = result.get("result", "")
         source_docs = result.get("source_documents", [])
         
-        # Extract unique source URLs
+
         sources = []
         seen_urls = set()
         
@@ -119,10 +102,10 @@ RESPOSTA:
                 })
                 seen_urls.add(url)
         
-        # Limit to maximum 5 sources
+
         sources = sources[:5]
         
-        # Format sources section
+
         if sources:
             sources_text = "\n\n**Fontes:**\n"
             for i, source in enumerate(sources, 1):
@@ -130,7 +113,7 @@ RESPOSTA:
         else:
             sources_text = ""
         
-        # Combine answer with sources
+
         formatted_answer = answer + sources_text
         
         return {
@@ -141,17 +124,16 @@ RESPOSTA:
         }
     
     def ask(self, question: str) -> Dict[str, Any]:
-        """Ask a question and get a formatted response based purely on RAG content"""
         if not self.qa_chain:
             raise ValueError("QA chain not setup. Call setup_qa_chain() first.")
         
         logger.info(f"Processing question: {question}")
         
         try:
-            # Get response from RAG chain
+
             result = self.qa_chain.invoke({"query": question})
             
-            # Format response
+
             formatted_result = self.format_response(result)
             
             logger.info("Question processed successfully with RAG knowledge")
@@ -169,7 +151,6 @@ RESPOSTA:
             }
     
     def batch_ask(self, questions: List[str]) -> List[Dict[str, Any]]:
-        """Process multiple questions"""
         results = []
         
         for i, question in enumerate(questions):
@@ -183,7 +164,6 @@ RESPOSTA:
         return results
     
     def get_relevant_documents(self, question: str, k: int = 5) -> List[Dict[str, Any]]:
-        """Get relevant documents for a question without generating an answer"""
         if not self.retriever:
             raise ValueError("Retriever not setup. Call setup_qa_chain() first.")
         

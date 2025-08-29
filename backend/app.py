@@ -51,7 +51,6 @@ sio = socketio.AsyncServer(
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     redis_stats = await redis_client.get_system_stats()
     return {
         "status": "healthy",
@@ -61,7 +60,6 @@ async def health_check():
 
 @app.get("/socket-test")
 async def socket_test():
-    """Test Socket.IO server status"""
     return {
         "socketio_server": str(type(sio)),
         "socketio_async_mode": sio.async_mode,
@@ -70,7 +68,6 @@ async def socket_test():
 
 @app.get("/api/messages")
 async def get_chat_messages(session_id: str = "default", limit: int = 50):
-    """Get chat messages for a session"""
     try:
         messages = await broker_system.get_conversation_history(session_id, limit)
         return {"messages": messages}
@@ -79,7 +76,6 @@ async def get_chat_messages(session_id: str = "default", limit: int = 50):
 
 @app.post("/api/messages")
 async def send_message(message: Dict[str, Any]):
-    """Send a message to the chatbot"""
     try:
         session_id = message.get("session_id", "default")
         response = await broker_system.process_message(message, session_id)
@@ -89,18 +85,15 @@ async def send_message(message: Dict[str, Any]):
 
 @sio.event
 async def connect(sid, environ):
-    """Handle client connection"""
     print(f"Client {sid} connected")
     await sio.emit('connected', {'status': 'Connected to server'}, room=sid)
 
 @sio.event
 async def disconnect(sid):
-    """Handle client disconnection"""
     print(f"Client {sid} disconnected")
 
 @sio.event
 async def chat_message(sid, data):
-    """Handle incoming chat messages"""
     try:
         session_id = data.get("session_id", sid)
         response = await broker_system.process_message(data, session_id)

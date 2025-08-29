@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-InfinitePay Help Center Web Scraper
-
-This module crawls the InfinitePay help center (https://ajuda.infinitepay.io/pt-BR/)
-to extract all articles with proper rate limiting and deduplication.
-"""
 
 import requests
 import time
@@ -16,13 +10,12 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-# Configure logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @dataclass
 class Article:
-    """Represents a scraped article"""
     title: str
     url: str
     content: str
@@ -37,7 +30,6 @@ class Article:
         }
 
 class InfinitePayScraper:
-    """Web scraper for InfinitePay help center"""
     
     def __init__(self, base_url: str = "https://ajuda.infinitepay.io/pt-BR/"):
         self.base_url = base_url
@@ -49,25 +41,22 @@ class InfinitePayScraper:
         self.articles: List[Article] = []
         
     def normalize_url(self, url: str) -> str:
-        """Normalize URL by removing anchors and query parameters"""
         parsed = urlparse(url)
-        # Remove fragment (anchor) and query parameters for deduplication
+
         normalized = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
         return normalized.rstrip('/')
     
     def is_article_url(self, url: str) -> bool:
-        """Check if URL is an article page"""
         return '/articles/' in url or '/pt-BR/' in url
     
     def is_valid_url(self, url: str) -> bool:
-        """Check if URL should be crawled"""
         parsed = urlparse(url)
         
-        # Must be from the same domain
+
         if parsed.netloc and 'ajuda.infinitepay.io' not in parsed.netloc:
             return False
             
-        # Skip certain paths
+
         skip_paths = ['/search', '/contact', '/login', '/logout', '/admin']
         if any(skip_path in url for skip_path in skip_paths):
             return False
@@ -75,34 +64,32 @@ class InfinitePayScraper:
         return True
     
     def extract_text_content(self, soup: BeautifulSoup) -> str:
-        """Extract clean text content from article page"""
         content_parts = []
         
-        # Try to find main content area
+
         main_content = soup.find('main') or soup.find('article') or soup.find('div', class_='content')
         if not main_content:
             main_content = soup
             
-        # Extract headings
+
         for heading in main_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
             text = heading.get_text(strip=True)
             if text:
                 content_parts.append(f"\n{text}\n")
         
-        # Extract paragraphs
+
         for paragraph in main_content.find_all('p'):
             text = paragraph.get_text(strip=True)
             if text and len(text) > 10:  # Skip very short paragraphs
                 content_parts.append(text)
         
-        # Extract lists
         for list_elem in main_content.find_all(['ul', 'ol']):
             for item in list_elem.find_all('li'):
                 text = item.get_text(strip=True)
                 if text:
                     content_parts.append(f"• {text}")
         
-        # Extract tables
+
         for table in main_content.find_all('table'):
             for row in table.find_all('tr'):
                 cells = [cell.get_text(strip=True) for cell in row.find_all(['td', 'th'])]
@@ -112,8 +99,7 @@ class InfinitePayScraper:
         return "\n\n".join(content_parts)
     
     def extract_title(self, soup: BeautifulSoup) -> str:
-        """Extract article title"""
-        # Try different title selectors
+
         title_selectors = [
             'h1',
             '.article-title',
@@ -131,7 +117,6 @@ class InfinitePayScraper:
         return "Untitled Article"
     
     def scrape_page(self, url: str) -> bool:
-        """Scrape a single page and extract article content"""
         try:
             logger.info(f"Scraping: {url}")
             
@@ -140,11 +125,11 @@ class InfinitePayScraper:
             
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Extract article content
+
             title = self.extract_title(soup)
             content = self.extract_text_content(soup)
             
-            if content and len(content.strip()) > 100:  # Only save substantial content
+            if content and len(content.strip()) > 100:
                 article = Article(
                     title=title,
                     url=url,
@@ -162,7 +147,6 @@ class InfinitePayScraper:
             return False
     
     def find_links(self, url: str) -> List[str]:
-        """Find all internal links on a page"""
         try:
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
@@ -185,10 +169,9 @@ class InfinitePayScraper:
             return []
     
     def crawl(self, max_pages: int = 500, delay: float = 0.5) -> List[Article]:
-        """Crawl the help center starting from base URL"""
         logger.info(f"Starting crawl of {self.base_url}")
         
-        # Start with base URL
+
         urls_to_visit = [self.normalize_url(self.base_url)]
         pages_crawled = 0
         

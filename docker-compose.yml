@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Main application
   app:
     build: .
     ports:
@@ -29,7 +28,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # RAG API service
   rag-api:
     build: .
     ports:
@@ -49,7 +47,6 @@ services:
       retries: 3
       start_period: 60s
 
-  # Redis for conversation history and caching
   redis:
     image: redis:7-alpine
     ports:
@@ -65,7 +62,6 @@ services:
       retries: 3
       start_period: 10s
 
-  # MongoDB for storing chat history and metadata
   mongo:
     image: mongo:7
     ports:
@@ -82,7 +78,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Development frontend (optional, for development only)
   frontend-dev:
     build:
       context: ./frontend

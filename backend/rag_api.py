@@ -7,14 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import logging
 
-# Add the rag_pipeline directory to Python path
+
 rag_pipeline_path = Path(__file__).parent.parent / "rag_pipeline"
 sys.path.insert(0, str(rag_pipeline_path))
 
 try:
     from main_pipeline import InfinitePayRAGPipeline
 except ImportError:
-    # Fallback import path
+
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from rag_pipeline.main_pipeline import InfinitePayRAGPipeline
 
@@ -225,7 +225,6 @@ async def get_relevant_documents(query: str, k: int = 5):
 
 @app.get("/evaluate")
 async def run_evaluation():
-    """Run system evaluation"""
     global rag_pipeline
     
     if not rag_pipeline or not rag_pipeline.is_initialized:
