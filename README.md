@@ -287,8 +287,11 @@ kubectl scale deployment frontend --replicas=2 -n ai-assistant
 | `OPENAI_API_KEY` | OpenAI API key for LLM operations | Yes |
 | `MONGODB_URL` | MongoDB connection string | Yes |
 | `PORT` | Backend server port | No (default: 8000) |
+| `HOST` | Server host configuration | No (default: 0.0.0.0) |
 | `CORS_ORIGINS` | Allowed CORS origins | No |
 | `LOG_LEVEL` | Logging level | No (default: INFO) |
+| `RAG_API_URL` | RAG API service URL | Yes |
+| `RAG_VECTOR_STORE_PATH` | ChromaDB storage path | No (default: ./chroma_db) |
 
 ### RAG System Configuration
 - **Vector Store**: ChromaDB with persistent storage
